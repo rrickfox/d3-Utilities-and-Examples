@@ -47,9 +47,7 @@ function ForceGraph({
         links = links.map((_, i) => ({source: LS[i], target: LT[i], length: LF[i]}));
     
         // Construct the scales.
-        const color = d3.scaleOrdinal()
-            .domain(Array.from(new Set(G)).sort(d3.ascending))
-            .range(colors);
+        const color = d3.scaleOrdinal(colors)
         const linkLength = d3.scalePow()
             .exponent(2)
             .domain(d3.extent(LF))
