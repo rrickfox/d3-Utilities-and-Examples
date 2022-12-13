@@ -25,7 +25,7 @@ function ForceGraph({
         linkStrokeLinecap = "round", // link stroke linecap
         linkStrength,
         linkLengthRange = [20, 200],
-        colors = d3.schemeCategory10, // an array of color strings, for the node groups
+        colors = d3.schemeSet1, // an array of color strings, for the node groups
         width = 640, // outer width, in pixels
         height = 400, // outer height, in pixels
         margin = {top: 10, right: 60, bottom: 10, left: 60},

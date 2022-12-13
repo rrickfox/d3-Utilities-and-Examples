@@ -13,6 +13,7 @@ let map_active = true;
 let svg_map
 let svg_force
 let all_airports = []
+const colors = ["#B8B214","#E61988","#1921E6","#19E677"]
 
 // Waiting until document has loaded
 window.onload = () => {
@@ -35,7 +36,7 @@ window.onload = () => {
 
     // set the dimensions and margins of the graph
     const margin = {top: 10, right: 60, bottom: 10, left: 60},
-            width = 1500 - margin.left - margin.right,
+            width = 1050 - margin.left - margin.right,
             height = 1000 - margin.top - margin.bottom;
 
     // append the svg object to the body of the page
@@ -54,11 +55,11 @@ window.onload = () => {
         d3.json("us_states.min.json").then(function(data_states) {
             svg_map.append("g")
                 .attr("id", "states")
+                .attr("stroke", "black")
                 .selectAll("path")
                 .data(data_states.features)
                 .join("path")
                 .attr("fill", "none")
-                .attr("stroke", "black")
                 .attr("d", geoGenerator)
                 .attr("id", function(d) { return d["id"]; })
 
@@ -67,7 +68,7 @@ window.onload = () => {
             }
             // console.log(all_airports)
 
-            let color = d3.scaleOrdinal(d3.schemeCategory10)
+            let color = d3.scaleOrdinal(colors)
 
             const x = function(d) { return projection([d["longitude"], d["latitude"]])[0]; }
             const y = function(d) { return projection([d["longitude"], d["latitude"]])[1]; }
@@ -80,7 +81,7 @@ window.onload = () => {
                 .attr("cx", x)
                 .attr("cy", y)
                 .attr("r", 2)
-                .attr("fill", function(d) { return color(d["state"]); })
+                .attr("fill", function(d) { return color(coloring[d["state"]]); })
             
             svg_map.selectAll("circle")
                 .on("mouseover",(d, id) => {    // event listener to show tooltip on hover
@@ -99,7 +100,6 @@ window.onload = () => {
                 .join("g")
                 .attr("class", "bubble-tip")
                 .attr("id", (d)=> "bubble-tip-"+d["iata"])
-                .attr("transform", (d) => "translate("+(x(d)+16)+", "+clamp(y(d)+24, 0, 620)+")")
                 .style("display", "none")
                 .append("rect")     // this is the background to the tooltip
                 .attr("x",-7)
@@ -107,7 +107,7 @@ window.onload = () => {
                 .attr("rx",5)
                 .attr("fill","lightgray")
                 .attr("fill-opacity", 0.95)
-                .attr("height", 30)
+                .attr("height", 47)
 
             svg_map.selectAll(".bubble-tip")
                 .append("text")
@@ -117,14 +117,28 @@ window.onload = () => {
                 .attr("stroke", "none")
 
             svg_map.selectAll(".bubble-tip")
+                .attr("transform", function(d) {
+                    let width_tooltip = svg_map.select("#bubble-tip-" + d["iata"])
+                    .select("text")
+                    .node()
+                    .getComputedTextLength() + 20; 
+                    return "translate("+clamp(x(d)+16, 0, width-width_tooltip+25)+", "+clamp(y(d)+24, 0, 600)+")"
+                })
                 .select("rect")
                 .attr("width", (d) => {
-                    return Math.max(svg_map.select("#bubble-tip-" + d["iata"])
+                    return svg_map.select("#bubble-tip-" + d["iata"])
                         .select("text")
                         .node()
-                        .getComputedTextLength() + 20,
-                        150); 
+                        .getComputedTextLength() + 20; 
                 });
+
+            svg_map.selectAll(".bubble-tip")
+            .append("text")
+            .text(d => "State: " + stateNames[d["state"]])
+            .attr("y", 18)
+            .style("font-family", "sans-serif")
+            .style("font-size", 14)
+            .attr("stroke", "none")
 
 
             d3.csv("Assets/flights-airport-5000plus.csv").then(function(data_flights) {
@@ -163,19 +177,18 @@ window.onload = () => {
 
                 let maxSize, minSize;
                 [minSize, maxSize] = d3.extent(nodes, d => d["value"])
-                console.log(minSize)
-                console.log(maxSize)
                 const radius = d3.scaleSqrt().domain([minSize, maxSize]).range([5, 20])
                 svg_force = ForceGraph({nodes: nodes, links: data_flights_once}, {
                     nodeId: d => d["id"],
-                    nodeGroup: d => d["state"],
+                    nodeGroup: d => coloring[d["state"]],
                     nodeValue: d => d["value"],
                     linkSource: d => d["origin"],
                     linkTarget: d => d["destination"],
                     linkStrength: d => parseInt(d["value"]),
                     nodeTitle: d => ({"Name": d["name"], "State": stateNames[d["state"]], "Flights": d["value"]}),
                     nodeRadius: d => radius(d.value),
-                    width: width,
+                    colors: colors,
+                    width: 1500,
                     height: height})
 
                 // console.log(svg_force)
@@ -287,4 +300,58 @@ window.onload = () => {
         "WI": "Wisconsin",
         "WY": "Wyoming"
     }
+
+    const coloring = {
+        "WA": 0,
+        "DE": 0,
+        "DC": 0,
+        "WI": 1,
+        "WV": 0,
+        "FL": 0,
+        "WY": 2,
+        "NH": 0,
+        "NJ": 2,
+        "NM": 2,
+        "TX": 1,
+        "LA": 0,
+        "NC": 2,
+        "ND": 2,
+        "NE": 0,
+        "TN": 0,
+        "NY": 0,
+        "PA": 1,
+        "RI": 0,
+        "NV": 1,
+        "VA": 1,
+        "CO": 1,
+        "CA": 0,
+        "AL": 2,
+        "AR": 2,
+        "VT": 1,
+        "IL": 0,
+        "GA": 1,
+        "IN": 1,
+        "IA": 2,
+        "MA": 2,
+        "AZ": 3,
+        "ID": 3,
+        "CT": 1,
+        "ME": 1,
+        "MD": 2,
+        "OK": 0,
+        "OH": 3,
+        "UT": 0,
+        "MO": 1,
+        "MN": 0,
+        "MI": 0,
+        "KS": 2,
+        "MT": 0,
+        "MS": 1,
+        "SC": 0,
+        "KY": 2,
+        "OR": 2,
+        "SD": 1,
+        "HI": 0,
+        "AK": 0
+      }
 };
